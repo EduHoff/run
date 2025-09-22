@@ -1,0 +1,141 @@
+#!/usr/bin/env bash
+
+compile(){
+    local file="$1"
+    local ext="$2"
+    local file_name="$3"
+
+    case "$ext" in
+        "c") #C
+            gcc "$file" -o "$file_name"
+            ;;
+        "cpp") #C++
+            g++ "$file" -o "$file_name"
+            ;;
+        "cs" | "csproj") #Csharp
+            dotnet build
+            ;;
+        "hs") #Haskell
+            ghc "$file" -o "$file_name"
+            ;;
+        "rs") #Rust
+            rustc "$file"
+            ;;
+        "ts") #Typescript (to Javascript)
+            if [ "$compile_flag" = true ]; then
+                tsc "$file"
+            fi
+            ;;
+         "js" | "py" | "sh") #Interpreter only languages
+            if [ "$compile_flag" = true ]; then
+                echo "Error: File '$file' is interpreted and cannot be compiled." >&2
+            fi
+            ;;
+        *)  
+            if [ "$compile_flag" = true ]; then
+                echo "Error: File '$file' is not compilable." >&2
+            fi
+            ;;
+    esac
+}
+
+execute(){
+    local file="$1"
+    local ext="$2"
+    local file_name="$3"
+
+    case "$ext" in
+        "c" | "cpp" | "hs" | "rs") #C, C++, Rust
+            ./"$file_name"
+            ;;
+        "cs" | "csproj") #Csharp
+            dotnet run --no-build
+            ;;
+        "py" | "js" | "ts" | "sh") #Interpreter only languages
+            interpreter "$file" "$ext" "$file_name"
+            ;;
+        *)  
+            if [ -x "$file" ]; then
+                ./"$file_name"
+            else
+                echo "Error: Unknown or unsupported file type '$ext'." >&2
+                exit 1
+            fi
+            ;;
+    esac
+}
+
+interpreter(){
+    local file="$1"
+    local ext="$2"
+    local file_name="$3"
+
+    case "$ext" in
+        "hs") #Haskell
+            runhaskell "$file"
+            ;;
+        "js" | "ts") #Javascript, Typescript
+            node "$file"
+            ;;
+        "py") #Python
+            python3 "$file"
+            ;;
+        "sh") #Shell script
+            ./"$file"
+            ;;
+        *)  
+            if [ -x "$file" ]; then
+                ./"$file_name"
+            else
+                echo "Error: '$ext' is not an interpreted language." >&2
+                exit 1
+            fi
+            ;;
+    esac
+}
+
+
+compile_flag=false
+execute_flag=false
+interpreter_flag=false
+
+while getopts ":cei" opt; do
+    case $opt in
+        c) compile_flag=true ;;
+        e) execute_flag=true ;;
+        i) interpreter_flag=true ;;
+        \?) echo "Error: Invalid option '-$OPTARG'." >&2; exit 1 ;;
+    esac
+done
+
+shift $((OPTIND -1))
+
+if [ -z "$1" ]; then
+    echo "Error: No input file provided." >&2
+    exit 1
+fi
+
+file="$1"
+ext="${file##*.}"
+file_name=$(basename "$file" ."$ext")
+
+#default
+if [ "$compile_flag" = false ] && [ "$execute_flag" = false ] && [ "$interpreter_flag" = false ]; then
+    compile "$file" "$ext" "$file_name" && execute "$file" "$ext" "$file_name"
+    exit 0
+fi
+
+#compile
+if [ "$compile_flag" = true ]; then
+    compile "$file" "$ext" "$file_name"
+fi
+
+#execute
+if [ "$execute_flag" = true ]; then
+    execute "$file" "$ext" "$file_name"
+fi
+
+#interpreter
+if [ "$interpreter_flag" = true ]; then
+    interpreter "$file" "$ext" "$file_name"
+fi
