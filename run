@@ -2,33 +2,53 @@
 
 find_cargo_toml() {
     local current_dir=$(dirname "$(realpath "$1")")
-    
     while [ "$current_dir" != "/" ] && [ -n "$current_dir" ]; do
         if [ -f "$current_dir/Cargo.toml" ]; then
             echo "$current_dir/Cargo.toml"
             return 0
         fi
         current_dir=$(dirname "$current_dir")
-        if [ ${#current_dir} -lt 2 ]; then
-            break
-        fi
     done
     return 1
 }
 
+find_pom_xml() {
+    local current_dir=$(dirname "$(realpath "$1")")
+    while [ "$current_dir" != "/" ] && [ -n "$current_dir" ]; do
+        if [ -f "$current_dir/pom.xml" ]; then
+            echo "$current_dir/pom.xml"
+            return 0
+        fi
+        current_dir=$(dirname "$current_dir")
+    done
+    return 1
+}
+
+find_java_project_root() {
+    local current_dir=$(dirname "$(realpath "$1")")
+    while [ "$current_dir" != "/" ] && [ -n "$current_dir" ]; do
+        if [ -d "$current_dir/src" ]; then
+            echo "$current_dir"
+            return 0
+        fi
+        current_dir=$(dirname "$current_dir")
+    done
+    return 1
+}
+
+
+# -------------------
+# Compilar
+# -------------------
 compile(){
     local file="$1"
     local ext="$2"
     local file_name="$3"
 
     case "$ext" in
-        "c") #C
-            gcc "$file" -o "$file_name"
-            ;;
-        "cpp") #C++
-            g++ "$file" -o "$file_name"
-            ;;
-        "cs") #C# arquivo individual
+        "c") gcc "$file" -o "$file_name" ;;
+        "cpp") g++ "$file" -o "$file_name" ;;
+        "cs")
             if compgen -G "*.csproj" > /dev/null; then
                 dotnet build
             else
@@ -36,33 +56,62 @@ compile(){
                 return 1
             fi
             ;;
-        "csproj") #C# projeto
-            dotnet build
-            ;;
-        "hs") #Haskell
-            ghc "$file" -o "$file_name"
-            ;;
-        "rs") #Rust
+        "csproj") dotnet build ;;
+        "hs") ghc "$file" -o "$file_name" ;;
+        "rs")
             local cargo_toml=$(find_cargo_toml "$file")
-            if [ -n "$cargo_toml" ] && [ -f "$cargo_toml" ]; then
+            if [ -n "$cargo_toml" ]; then
                 local project_dir=$(dirname "$cargo_toml")
                 (cd "$project_dir" && cargo build)
             else
                 rustc "$file"
             fi
             ;;
-        "ts") #Typescript (to Javascript)
-            if [ "$compile_flag" = true ]; then
-                tsc "$file"
+        "java")
+            local pom_xml=$(find_pom_xml "$file")
+            if [ -n "$pom_xml" ]; then
+                local project_dir=$(dirname "$pom_xml")
+                (cd "$project_dir" && mvn -q package)
+            else
+                local project_root=$(find_java_project_root "$file")
+                if [ -n "$project_root" ]; then
+                    # Projeto estilo Eclipse (com src e bin)
+                    local bin_dir="$project_root/bin"
+                    mkdir -p "$bin_dir"
+
+                    find "$project_root/src" -type f -name "*.java" -print0 | xargs -0 javac -d "$bin_dir"
+
+                    local main_class=$(basename "$file" .java)
+                    local package=$(grep -m1 '^package ' "$file" | sed 's/package \(.*\);/\1/')
+
+                    if [ -n "$package" ]; then
+                        main_class="$package.$main_class"
+                    fi
+
+                    echo "Main-Class: $main_class" > "$bin_dir/manifest.txt"
+                    jar cfm "$file_name.jar" "$bin_dir/manifest.txt" -C "$bin_dir" .
+                else
+                    # Arquivo Java isolado (sem projeto)
+                    local bin_dir="./bin"
+                    mkdir -p "$bin_dir"
+
+                    javac -d "$bin_dir" "$file"
+
+                    local main_class=$(basename "$file" .java)
+                    echo "Main-Class: $main_class" > "$bin_dir/manifest.txt"
+                    jar cfm "$file_name.jar" "$bin_dir/manifest.txt" -C "$bin_dir" .
+                fi
             fi
             ;;
-        "js" | "py" | "sh") #Interpreter only languages
+
+        "ts") if [ "$compile_flag" = true ]; then tsc "$file"; fi ;;
+        "js" | "py" | "sh")
             if [ "$compile_flag" = true ]; then
                 echo "Error: File '$file' is interpreted and cannot be compiled." >&2
                 return 1
             fi
             ;;
-        *)  
+        *)
             if [ "$compile_flag" = true ]; then
                 echo "Error: File '$file' is not compilable." >&2
                 return 1
@@ -71,32 +120,37 @@ compile(){
     esac
 }
 
+
+# -------------------
+# Executar
+# -------------------
 execute(){
     local file="$1"
     local ext="$2"
     local file_name="$3"
 
     case "$ext" in
-        "c" | "cpp" | "hs") #C, C++, Haskell
-            ./"$file_name"
-            ;;
-        "cs" | "csproj") #Csharp
-            dotnet run --no-build
-            ;;
-        "rs") #Rust - ÚNICO caso para Rust
+        "c" | "cpp" | "hs") ./"$file_name" ;;
+        "cs" | "csproj") dotnet run --no-build ;;
+        "rs")
             local cargo_toml=$(find_cargo_toml "$file")
-            if [ -n "$cargo_toml" ] && [ -f "$cargo_toml" ]; then
+            if [ -n "$cargo_toml" ]; then
                 local project_dir=$(dirname "$cargo_toml")
-                echo "Running Cargo project: $project_dir"
                 (cd "$project_dir" && cargo run)
             else
                 ./"$file_name"
             fi
             ;;
-        "py" | "js" | "ts" | "sh") #Interpreter only languages
-            interpreter "$file" "$ext" "$file_name"
+        "java" | "jar")
+            if [ -f "$file_name.jar" ]; then
+                java -jar "$file_name.jar"
+            else
+                echo "Error: No .jar file found for '$file'." >&2
+                return 1
+            fi
             ;;
-        *)  
+        "py" | "js" | "ts" | "sh") interpreter "$file" "$ext" "$file_name" ;;
+        *)
             if [ -x "$file" ]; then
                 ./"$file_name"
             else
@@ -107,32 +161,20 @@ execute(){
     esac
 }
 
+
+
+# -------------------
+# Interpretar
+# -------------------
 interpreter(){
     local file="$1"
     local ext="$2"
-    local file_name="$3"
-
     case "$ext" in
-        "hs") #Haskell
-            runhaskell "$file"
-            ;;
-        "js" | "ts") #Javascript, Typescript
-            node "$file"
-            ;;
-        "py") #Python
-            python3 "$file"
-            ;;
-        "sh") #Shell script
-            ./"$file"
-            ;;
-        *)  
-            if [ -x "$file" ]; then
-                ./"$file_name"
-            else
-                echo "Error: '$ext' is not an interpreted language." >&2
-                exit 1
-            fi
-            ;;
+        "hs") runhaskell "$file" ;;
+        "js" | "ts") node "$file" ;;
+        "py") python3 "$file" ;;
+        "sh") ./"$file" ;;
+        *) echo "Error: '$ext' is not an interpreted language." >&2; exit 1 ;;
     esac
 }
 
@@ -163,26 +205,11 @@ file="$1"
 ext="${file##*.}"
 file_name=$(basename "$file" ."$ext")
 
-#default behavior (compile + execute)
 if [ "$compile_flag" = false ] && [ "$execute_flag" = false ] && [ "$interpreter_flag" = false ]; then
     compile "$file" "$ext" "$file_name" && execute "$file" "$ext" "$file_name"
     exit $?
 fi
+if [ "$compile_flag" = true ]; then compile "$file" "$ext" "$file_name"; exit $?; fi
+if [ "$execute_flag" = true ]; then execute "$file" "$ext" "$file_name"; exit $?; fi
+if [ "$interpreter_flag" = true ]; then interpreter "$file" "$ext" "$file_name"; exit $?; fi
 
-#compile only
-if [ "$compile_flag" = true ]; then
-    compile "$file" "$ext" "$file_name"
-    exit $?
-fi
-
-#execute only
-if [ "$execute_flag" = true ]; then
-    execute "$file" "$ext" "$file_name"
-    exit $?
-fi
-
-#interpreter only
-if [ "$interpreter_flag" = true ]; then
-    interpreter "$file" "$ext" "$file_name"
-    exit $?
-fi
