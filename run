@@ -83,6 +83,11 @@ compile(){
                 rustc "$file"
             fi
             ;;
+        "go")
+            if [ "$compile_flag" = true ]; then
+                go build -o "$file_name" "$file"
+            fi
+            ;;
         "ts") [ "$compile_flag" = true ] && tsc "$file" ;;
         "jar")
             echo "JAR file detected. Nothing to compile." ;;
@@ -115,11 +120,18 @@ execute(){
                 ./"$file_name"
             fi
             ;;
-        "js" | "ts" | "py" | "rb" | "sh") interpreter "$file" "$ext" ;;
+        "go")
+            if [ "$compile_flag" = true ]; then
+                ./"$file_name"
+            else
+                go run "$file"
+            fi
+            ;;
+        "js" | "ts" | "py" | "rb" | "sh" | "lua" | "php") interpreter "$file" "$ext" ;;
         "jar") java -jar "$file" ;;
         "java" | "class")
             echo "Error: Java requires the --java flag. Use: run --java <root_dir>" >&2
-            return 1
+            return 1run 
             ;;
         *)
             if [ -x "$file" ]; then
@@ -142,6 +154,8 @@ interpreter(){
         "js" | "ts") node "$file" ;;
         "py") python3 "$file" ;;
         "rb") ruby "$file" ;;
+        "lua") lua "$file" ;;
+        "php") php "$file" ;;
         "sh") ./"$file" ;;
         "java" | "class" | "jar")
             echo "Error: Java requires the --java flag. Use: run --java <root_dir>" >&2
