@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 
+# -------------------
+# Funções utilitárias
+# -------------------
+
 find_cargo_toml() {
     local current_dir=$(dirname "$(realpath "$1")")
     while [ "$current_dir" != "/" ] && [ -n "$current_dir" ]; do
@@ -12,30 +16,43 @@ find_cargo_toml() {
     return 1
 }
 
-find_pom_xml() {
-    local current_dir=$(dirname "$(realpath "$1")")
-    while [ "$current_dir" != "/" ] && [ -n "$current_dir" ]; do
-        if [ -f "$current_dir/pom.xml" ]; then
-            echo "$current_dir/pom.xml"
-            return 0
-        fi
-        current_dir=$(dirname "$current_dir")
-    done
-    return 1
-}
+# Detectar a classe principal de um projeto Java
+detect_main_class() {
+    local root_dir="$1"
+    local candidates=()
 
-find_java_project_root() {
-    local current_dir=$(dirname "$(realpath "$1")")
-    while [ "$current_dir" != "/" ] && [ -n "$current_dir" ]; do
-        if [ -d "$current_dir/src" ]; then
-            echo "$current_dir"
-            return 0
+    while IFS= read -r file; do
+        if grep -q "public[[:space:]]\+static[[:space:]]\+void[[:space:]]\+main" "$file"; then
+            local pkg=$(grep "^package " "$file" | sed 's/package \(.*\);/\1/' || true)
+            local cls=$(basename "$file" .java)
+            if [ -n "$pkg" ]; then
+                candidates+=("$pkg.$cls")
+            else
+                candidates+=("$cls")
+            fi
         fi
-        current_dir=$(dirname "$current_dir")
-    done
-    return 1
-}
+    done < <(find "$root_dir" -name "*.java")
 
+    if [ ${#candidates[@]} -eq 0 ]; then
+        echo "Error: Nenhuma classe com método main encontrada." >&2
+        return 1
+    elif [ ${#candidates[@]} -eq 1 ]; then
+        echo "${candidates[0]}"
+    else
+        echo "Foram encontradas várias classes com método main:"
+        for i in "${!candidates[@]}"; do
+            echo "[$((i+1))] ${candidates[$i]}"
+        done
+        read -p "Escolha a classe principal (número): " choice
+        local index=$((choice-1))
+        if [ -n "${candidates[$index]}" ]; then
+            echo "${candidates[$index]}"
+        else
+            echo "Escolha inválida." >&2
+            return 1
+        fi
+    fi
+}
 
 # -------------------
 # Compilar
@@ -61,65 +78,22 @@ compile(){
         "rs")
             local cargo_toml=$(find_cargo_toml "$file")
             if [ -n "$cargo_toml" ]; then
-                local project_dir=$(dirname "$cargo_toml")
-                (cd "$project_dir" && cargo build)
+                (cd "$(dirname "$cargo_toml")" && cargo build)
             else
                 rustc "$file"
             fi
             ;;
-        "java")
-            local pom_xml=$(find_pom_xml "$file")
-            if [ -n "$pom_xml" ]; then
-                local project_dir=$(dirname "$pom_xml")
-                (cd "$project_dir" && mvn -q package)
-            else
-                local project_root=$(find_java_project_root "$file")
-                if [ -n "$project_root" ]; then
-                    # Projeto estilo Eclipse (com src e bin)
-                    local bin_dir="$project_root/bin"
-                    mkdir -p "$bin_dir"
-
-                    find "$project_root/src" -type f -name "*.java" -print0 | xargs -0 javac -d "$bin_dir"
-
-                    local main_class=$(basename "$file" .java)
-                    local package=$(grep -m1 '^package ' "$file" | sed 's/package \(.*\);/\1/')
-
-                    if [ -n "$package" ]; then
-                        main_class="$package.$main_class"
-                    fi
-
-                    echo "Main-Class: $main_class" > "$bin_dir/manifest.txt"
-                    jar cfm "$file_name.jar" "$bin_dir/manifest.txt" -C "$bin_dir" .
-                else
-                    # Arquivo Java isolado (sem projeto)
-                    local bin_dir="./bin"
-                    mkdir -p "$bin_dir"
-
-                    javac -d "$bin_dir" "$file"
-
-                    local main_class=$(basename "$file" .java)
-                    echo "Main-Class: $main_class" > "$bin_dir/manifest.txt"
-                    jar cfm "$file_name.jar" "$bin_dir/manifest.txt" -C "$bin_dir" .
-                fi
-            fi
-            ;;
-
-        "ts") if [ "$compile_flag" = true ]; then tsc "$file"; fi ;;
-        "js" | "py" | "sh")
-            if [ "$compile_flag" = true ]; then
-                echo "Error: File '$file' is interpreted and cannot be compiled." >&2
-                return 1
-            fi
+        "jar")
+            echo "JAR file detected. Nothing to compile." ;;
+        "java" | "class")
+            echo "Error: Java requires the --java flag. Use: run --java <root_dir>" >&2
+            return 1
             ;;
         *)
-            if [ "$compile_flag" = true ]; then
-                echo "Error: File '$file' is not compilable." >&2
-                return 1
-            fi
+            [ "$compile_flag" = true ] && echo "Error: File '$file' is not compilable." >&2 && return 1
             ;;
     esac
 }
-
 
 # -------------------
 # Executar
@@ -135,33 +109,18 @@ execute(){
         "rs")
             local cargo_toml=$(find_cargo_toml "$file")
             if [ -n "$cargo_toml" ]; then
-                local project_dir=$(dirname "$cargo_toml")
-                (cd "$project_dir" && cargo run)
+                (cd "$(dirname "$cargo_toml")" && cargo run)
             else
                 ./"$file_name"
             fi
             ;;
-        "java" | "jar")
-            if [ -f "$file_name.jar" ]; then
-                java -jar "$file_name.jar"
-            else
-                echo "Error: No .jar file found for '$file'." >&2
-                return 1
-            fi
-            ;;
-        "py" | "js" | "ts" | "sh") interpreter "$file" "$ext" "$file_name" ;;
-        *)
-            if [ -x "$file" ]; then
-                ./"$file_name"
-            else
-                echo "Error: Unknown or unsupported file type '$ext'." >&2
-                exit 1
-            fi
+        "jar") java -jar "$file" ;;
+        "java" | "class")
+            echo "Error: Java requires the --java flag. Use: run --java <root_dir>" >&2
+            return 1
             ;;
     esac
 }
-
-
 
 # -------------------
 # Interpretar
@@ -174,28 +133,119 @@ interpreter(){
         "js" | "ts") node "$file" ;;
         "py") python3 "$file" ;;
         "sh") ./"$file" ;;
+        "java" | "class" | "jar")
+            echo "Error: Java requires the --java flag. Use: run --java <root_dir>" >&2
+            exit 1
+            ;;
         *) echo "Error: '$ext' is not an interpreted language." >&2; exit 1 ;;
     esac
 }
 
 # -------------------
-# process flags
+# Java: compilar e executar
+# -------------------
+
+compile_java(){
+    local root_dir="$1"
+
+    if [ -f "$root_dir/pom.xml" ]; then
+        echo "Maven project detected. Compiling with mvn..."
+        (cd "$root_dir" && mvn package)
+    elif compgen -G "$root_dir/build.gradle*" > /dev/null; then
+        echo "Gradle project detected. Compiling with gradle..."
+        (cd "$root_dir" && gradle build)
+    else
+        echo "Manual Java project detected. Compiling all .java files..."
+        find "$root_dir" -name "*.java" > sources.txt
+        if [ -s sources.txt ]; then
+            mkdir -p "$root_dir/bin"
+            javac -d "$root_dir/bin" @sources.txt
+            local entry_point
+            entry_point=$(detect_main_class "$root_dir") || return 1
+            local jar_name="$root_dir/$(basename "$entry_point").jar"
+            echo "Main-Class: $entry_point" > "$root_dir/manifest.txt"
+            jar cfm "$jar_name" "$root_dir/manifest.txt" -C "$root_dir/bin" .
+            rm sources.txt "$root_dir/manifest.txt"
+            echo "Created JAR: $jar_name (entry point: $entry_point)"
+        else
+            echo "Error: No .java files found in $root_dir." >&2
+            rm sources.txt
+            return 1
+        fi
+    fi
+}
+
+execute_java(){
+    local root_dir="$1"
+
+    if [ -f "$root_dir/pom.xml" ]; then
+        echo "Running Maven project..."
+        (cd "$root_dir" && mvn exec:java)
+    elif compgen -G "$root_dir/build.gradle*" > /dev/null; then
+        echo "Running Gradle project..."
+        (cd "$root_dir" && gradle run)
+    else
+        local jar_file=$(find "$root_dir" -maxdepth 1 -name "*.jar" | head -n 1)
+        if [ -n "$jar_file" ]; then
+            echo "Running JAR: $jar_file"
+            java -jar "$jar_file"
+        else
+            echo "Error: No JAR found. Compile first with -c." >&2
+            return 1
+        fi
+    fi
+}
+
+interpret_java(){
+    local root_dir="$1"
+    echo "Running Java classes directly..."
+    local entry_point
+    entry_point=$(detect_main_class "$root_dir") || return 1
+    java -cp "$root_dir/bin" "$entry_point"
+}
+
+# -------------------
+# Processar flags
 # -------------------
 compile_flag=false
 execute_flag=false
 interpreter_flag=false
+java_flag=false
+java_root=""
 
-while getopts ":cei" opt; do
-    case $opt in
-        c) compile_flag=true ;;
-        e) execute_flag=true ;;
-        i) interpreter_flag=true ;;
-        \?) echo "Error: Invalid option '-$OPTARG'." >&2; exit 1 ;;
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        -c) compile_flag=true; shift ;;
+        -e) execute_flag=true; shift ;;
+        -i) interpreter_flag=true; shift ;;
+        --java) java_flag=true; shift; java_root="$1"; shift ;;
+        *) break ;;
     esac
 done
 
-shift $((OPTIND - 1))
+# -------------------
+# Execução Java
+# -------------------
+if [ "$java_flag" = true ]; then
+    if [ -z "$java_root" ]; then
+        echo "Error: No Java root directory provided." >&2
+        exit 1
+    fi
 
+    [ "$compile_flag" = true ] && compile_java "$java_root"
+    [ "$execute_flag" = true ] && execute_java "$java_root"
+    [ "$interpreter_flag" = true ] && interpret_java "$java_root"
+
+    # Se não pediu nada, compila e executa
+    if [ "$compile_flag" = false ] && [ "$execute_flag" = false ] && [ "$interpreter_flag" = false ]; then
+        compile_java "$java_root" && execute_java "$java_root"
+    fi
+    exit $?
+fi
+
+# -------------------
+# Execução normal
+# -------------------
 if [ -z "$1" ]; then
     echo "Error: No input file provided." >&2
     exit 1
@@ -209,7 +259,7 @@ if [ "$compile_flag" = false ] && [ "$execute_flag" = false ] && [ "$interpreter
     compile "$file" "$ext" "$file_name" && execute "$file" "$ext" "$file_name"
     exit $?
 fi
-if [ "$compile_flag" = true ]; then compile "$file" "$ext" "$file_name"; exit $?; fi
-if [ "$execute_flag" = true ]; then execute "$file" "$ext" "$file_name"; exit $?; fi
-if [ "$interpreter_flag" = true ]; then interpreter "$file" "$ext" "$file_name"; exit $?; fi
+[ "$compile_flag" = true ] && compile "$file" "$ext" "$file_name" && exit $?
+[ "$execute_flag" = true ] && execute "$file" "$ext" "$file_name" && exit $?
+[ "$interpreter_flag" = true ] && interpreter "$file" "$ext" && exit $?
 

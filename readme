@@ -3,9 +3,23 @@ Ainda estou desenvolvendo esse bash script, então esse readme ainda vai ser mel
 
 
 
+
+run <file> — compile and run
+
+run -c <file> — compile
+run -e <file> — execute an alreary build executable or interpreter
+run -i <file> — interprete intead of compile (if avaliable)
+
+run --java <project_root_dir> — compile and run a java project
+run -c --java <project_root_dir> — build the .jar  and .classes
+run -e --java <project_root_dir> — run the .jar file
+run -i --java <project_root_dir> — run the .classes files
+
+
+
 o que vai está escrito aqui?
 
 e manual de como utilizar ele e talvez um link para um script que automaticamente instalar o script run nessa máquina?
 
 
-linguagens suportadas até o momento: C, C++, C#, Haskell, Javascript, Python, Rust, Typescript
+linguagens suportadas até o momento: C, C++, C#, Haskell, Java, Javascript, Python, Rust, Typescript
