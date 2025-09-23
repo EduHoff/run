@@ -1,25 +1,142 @@
-Ainda estou desenvolvendo esse bash script, então esse readme ainda vai ser melhor elaborado
+# 🚀 RUN - Universal Build and Execution Helper (nota, não necessárioamene esse vai ser o nome, mas vou deixar assim por enquanto porque é uma boa coisa para se basear... talvez)
+
+**run** is a Bash script that provides a unified interface for compiling, executing, and interpreting source files across multiple programming languages. It automatically detects project types and handles build configurations, making development workflow consistent regardless of the language used.
+
+## 📋 Table of Contents
+- [Features](#-features)
+- [Installation](#-installation)
+- [Usage](#-usage)
+- [Supported Languages](#-supported-languages)
+- [Java Project Support](#-java-project-support)
+- [Examples](#-examples)
+- [Exit Status](#-exit-status)
+- [Requirements](#-requirements)
+- [Contributing](#-contributing)
+- [License](#-license)
+
+## ✨ Features
+
+- **Multi-language support**: Single command for 10+ programming languages
+- **Smart detection**: Automatically identifies project types and build systems
+- **Java expertise**: Full support for manual, Maven, and Gradle projects
+- **Simple interface**: Consistent commands across all languages
+- **Zero configuration**: Works out of the box for most projects
+
+## 📥 Installation
+
+(ainda não vou fazer isso)
+
+
+## 🚀 Usage
+
+### Basic Syntax
+```bash
+run [OPTIONS] <file_or_directory>
+```
+
+### General Options
+| Option | Description |
+|--------|-------------|
+| `run <file>` | Compile and execute (default behavior) |
+| `run -c <file>` | Compile only |
+| `run -e <file>` | Execute only (already compiled) |
+| `run -i <file>` | Interpret only (for script languages) |
+
+### Java Project Options
+| Option | Description |
+|--------|-------------|
+| `run --java <dir>` | Compile and run Java project |
+| `run -c --java <dir>` | Compile Java project only |
+| `run -e --java <dir>` | Run compiled Java project |
+| `run -i --java <dir>` | Run classes directly (no JAR) |
+
+## 🌐 Supported Languages
+
+| Language | Compiler/Interpreter | Project Detection |
+|----------|---------------------|-------------------|
+| **C** | gcc | Single file |
+| **C++** | g++ | Single file |
+| **C#** | dotnet | .csproj files |
+| **Haskell** | ghc, runhaskell | Single file |
+| **Java** | javac, java | Manual, Maven, Gradle |
+| **JavaScript** | node | Single file |
+| **TypeScript** | tsc, node | Single file |
+| **Python** | python3 | Single file |
+| **Rust** | rustc, cargo | Single file, Cargo.toml |
+| **Shell** | bash | Single file |
+
+## ☕ Java Project Support
+
+### Project Types
+- **📁 Manual Projects**: Directories with `.java` files in `src/` structure
+- **🐘 Maven Projects**: Directories containing `pom.xml`
+- **🦁 Gradle Projects**: Directories containing `build.gradle` or `build.gradle.kts`
+
+### Automatic Features
+- 🔍 **Main class detection**: Automatically finds the entry point
+- 📦 **JAR creation**: Builds executable JAR with proper manifest
+- 🏗️ **Dependency handling**: Manages external libraries when needed
+- 📂 **Smart compilation**: Compiles all `.java` files into `bin/` directory
+
+## 💡 Examples
+
+### General Usage
+```bash
+# C - Compile and run
+run program.c
+
+# Rust - Compile only
+run -c main.rs
+
+# Python - Interpret only
+run -i script.py
+
+# Execute compiled binary
+run -e myapp
+```
+
+### Java Projects
+```bash
+# Auto-detect and run Java project
+run --java .
+
+# Compile Maven project only
+run -c --java ./my-project
+
+# Run existing Gradle project
+run -e --java ./gradle-project
+
+# Interpret classes directly
+run -i --java ./src
+```
+
+## 📊 Exit Status
+
+| Code | Description |
+|------|-------------|
+| `0` | Success |
+| `1` | General error (compilation failed, file not found) |
+| `2` | Usage error (invalid options or arguments) |
+
+## ⚙️ Requirements
+
+### Core Dependencies
+- **Bash** 4.0+
+- Standard language toolchains for your projects
+
+### Language-Specific Requirements
+- **C/C++**: gcc/g++
+- **C#**: .NET SDK
+- **Java**: JDK 8+
+- **Rust**: rustc/cargo
+- **Python**: python3
+- **Haskell**: ghc
+- **Node.js**: node/npm
 
 
 
+## 📄 License
 
+(ainda preciso fazer essa parte, lembrente para mim depois, mas vou querer algo estilo open source)
 
-run <file> — compile and run
-
-run -c <file> — compile
-run -e <file> — execute an alreary build executable or interpreter
-run -i <file> — interprete intead of compile (if avaliable)
-
-run --java <project_root_dir> — compile and run a java project
-run -c --java <project_root_dir> — build the .jar  and .classes
-run -e --java <project_root_dir> — run the .jar file
-run -i --java <project_root_dir> — run the .classes files
-
-
-
-o que vai está escrito aqui?
-
-e manual de como utilizar ele e talvez um link para um script que automaticamente instalar o script run nessa máquina?
-
-
-linguagens suportadas até o momento: C, C++, C#, Haskell, Java, Javascript, Python, Rust, Typescript
+Copyright © 2025 Eduardo Hoffmann do Carmo Silva.

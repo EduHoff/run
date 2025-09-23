@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # -------------------
-# Funções utilitárias
+# Utility functions
 # -------------------
 
 find_cargo_toml() {
@@ -16,7 +16,7 @@ find_cargo_toml() {
     return 1
 }
 
-# Detectar a classe principal de um projeto Java
+# Detect the main class in a Java project
 detect_main_class() {
     local root_dir="$1"
     local candidates=()
@@ -34,28 +34,28 @@ detect_main_class() {
     done < <(find "$root_dir" -name "*.java")
 
     if [ ${#candidates[@]} -eq 0 ]; then
-        echo "Error: Nenhuma classe com método main encontrada." >&2
+        echo "Error: No class with main method found." >&2
         return 1
     elif [ ${#candidates[@]} -eq 1 ]; then
         echo "${candidates[0]}"
     else
-        echo "Foram encontradas várias classes com método main:"
+        echo "Multiple classes with main method found:"
         for i in "${!candidates[@]}"; do
             echo "[$((i+1))] ${candidates[$i]}"
         done
-        read -p "Escolha a classe principal (número): " choice
+        read -p "Choose the main class (number): " choice
         local index=$((choice-1))
         if [ -n "${candidates[$index]}" ]; then
             echo "${candidates[$index]}"
         else
-            echo "Escolha inválida." >&2
+            echo "Invalid choice." >&2
             return 1
         fi
     fi
 }
 
 # -------------------
-# Compilar
+# Compile
 # -------------------
 compile(){
     local file="$1"
@@ -96,7 +96,7 @@ compile(){
 }
 
 # -------------------
-# Executar
+# Execute
 # -------------------
 execute(){
     local file="$1"
@@ -123,7 +123,7 @@ execute(){
 }
 
 # -------------------
-# Interpretar
+# Interpreter
 # -------------------
 interpreter(){
     local file="$1"
@@ -142,7 +142,7 @@ interpreter(){
 }
 
 # -------------------
-# Java: compilar e executar
+# Java: compile & execute
 # -------------------
 
 compile_java(){
@@ -162,9 +162,46 @@ compile_java(){
             javac -d "$root_dir/bin" @sources.txt
             local entry_point
             entry_point=$(detect_main_class "$root_dir") || return 1
-            local jar_name="$root_dir/$(basename "$entry_point").jar"
-            echo "Main-Class: $entry_point" > "$root_dir/manifest.txt"
+            local simple_name=$(basename "$entry_point")
+            local jar_name="$root_dir/$simple_name.jar"
+
+            # Detecta dependências (em lib/ ou no diretório raiz)
+            local deps=()
+            if compgen -G "$root_dir/lib/*.jar" > /dev/null; then
+                for dep in "$root_dir/lib/"*.jar; do
+                    deps+=("$(basename "$dep")")
+                done
+            elif compgen -G "$root_dir/*.jar" > /dev/null; then
+                for dep in "$root_dir/"*.jar; do
+                    [ "$dep" != "$jar_name" ] && deps+=("$(basename "$dep")")
+                done
+            fi
+
+            # Se não encontrou nada, pergunta para o usuário
+            if [ ${#deps[@]} -eq 0 ]; then
+                read -p "Nenhuma biblioteca encontrada. Digite o caminho para procurar JARs (ou deixe vazio para ignorar): " lib_path
+                if [ -n "$lib_path" ] && compgen -G "$lib_path/*.jar" > /dev/null; then
+                    for dep in "$lib_path"/*.jar; do
+                        deps+=("$(basename "$dep")")
+                        # Copia para o projeto (assim o jar funciona sozinho depois)
+                        cp "$dep" "$root_dir/"
+                    done
+                fi
+            fi
+
+            # Monta manifest com Main-Class e dependências
+            {
+                echo "Main-Class: $entry_point"
+                if [ ${#deps[@]} -gt 0 ]; then
+                    echo -n "Class-Path: "
+                    printf "%s " "${deps[@]}"
+                    echo
+                fi
+            } > "$root_dir/manifest.txt"
+
+            # Cria JAR
             jar cfm "$jar_name" "$root_dir/manifest.txt" -C "$root_dir/bin" .
+
             rm sources.txt "$root_dir/manifest.txt"
             echo "Created JAR: $jar_name (entry point: $entry_point)"
         else
@@ -174,6 +211,8 @@ compile_java(){
         fi
     fi
 }
+
+
 
 execute_java(){
     local root_dir="$1"
@@ -188,7 +227,13 @@ execute_java(){
         local jar_file=$(find "$root_dir" -maxdepth 1 -name "*.jar" | head -n 1)
         if [ -n "$jar_file" ]; then
             echo "Running JAR: $jar_file"
-            java -jar "$jar_file"
+            local cp="$jar_file"
+            if compgen -G "$root_dir/lib/*.jar" > /dev/null; then
+                cp="$cp:$root_dir/lib/*"
+            elif compgen -G "$root_dir/*.jar" > /dev/null; then
+                cp="$cp:$root_dir/*.jar"
+            fi
+            java -cp "$cp" -jar "$jar_file"
         else
             echo "Error: No JAR found. Compile first with -c." >&2
             return 1
@@ -201,11 +246,20 @@ interpret_java(){
     echo "Running Java classes directly..."
     local entry_point
     entry_point=$(detect_main_class "$root_dir") || return 1
-    java -cp "$root_dir/bin" "$entry_point"
+
+    local cp="$root_dir/bin"
+    if compgen -G "$root_dir/lib/*.jar" > /dev/null; then
+        cp="$cp:$root_dir/lib/*"
+    elif compgen -G "$root_dir/*.jar" > /dev/null; then
+        cp="$cp:$root_dir/*.jar"
+    fi
+
+    java -cp "$cp" "$entry_point"
 }
 
+
 # -------------------
-# Processar flags
+# Flags
 # -------------------
 compile_flag=false
 execute_flag=false
@@ -224,7 +278,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 # -------------------
-# Execução Java
+# Java execution
 # -------------------
 if [ "$java_flag" = true ]; then
     if [ -z "$java_root" ]; then
@@ -236,7 +290,6 @@ if [ "$java_flag" = true ]; then
     [ "$execute_flag" = true ] && execute_java "$java_root"
     [ "$interpreter_flag" = true ] && interpret_java "$java_root"
 
-    # Se não pediu nada, compila e executa
     if [ "$compile_flag" = false ] && [ "$execute_flag" = false ] && [ "$interpreter_flag" = false ]; then
         compile_java "$java_root" && execute_java "$java_root"
     fi
@@ -244,7 +297,7 @@ if [ "$java_flag" = true ]; then
 fi
 
 # -------------------
-# Execução normal
+# Normal execution
 # -------------------
 if [ -z "$1" ]; then
     echo "Error: No input file provided." >&2
