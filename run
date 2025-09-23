@@ -83,6 +83,7 @@ compile(){
                 rustc "$file"
             fi
             ;;
+        "ts") [ "$compile_flag" = true ] && tsc "$file" ;;
         "jar")
             echo "JAR file detected. Nothing to compile." ;;
         "java" | "class")
@@ -114,11 +115,19 @@ execute(){
                 ./"$file_name"
             fi
             ;;
+        "js" | "ts" | "py" | "rb" | "sh") interpreter "$file" "$ext" ;;
         "jar") java -jar "$file" ;;
         "java" | "class")
             echo "Error: Java requires the --java flag. Use: run --java <root_dir>" >&2
             return 1
             ;;
+        *)
+            if [ -x "$file" ]; then
+                ./"$file_name"
+            else
+                echo "Error: Could not execute '$file'. Unsupported file type or not executable." >&2
+                return 1
+            fi            
     esac
 }
 
@@ -132,6 +141,7 @@ interpreter(){
         "hs") runhaskell "$file" ;;
         "js" | "ts") node "$file" ;;
         "py") python3 "$file" ;;
+        "rb") ruby "$file" ;;
         "sh") ./"$file" ;;
         "java" | "class" | "jar")
             echo "Error: Java requires the --java flag. Use: run --java <root_dir>" >&2
@@ -309,7 +319,8 @@ ext="${file##*.}"
 file_name=$(basename "$file" ."$ext")
 
 if [ "$compile_flag" = false ] && [ "$execute_flag" = false ] && [ "$interpreter_flag" = false ]; then
-    compile "$file" "$ext" "$file_name" && execute "$file" "$ext" "$file_name"
+    compile "$file" "$ext" "$file_name"
+    execute "$file" "$ext" "$file_name"
     exit $?
 fi
 [ "$compile_flag" = true ] && compile "$file" "$ext" "$file_name" && exit $?
