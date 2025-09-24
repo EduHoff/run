@@ -1,0 +1,48 @@
+.\" Manpage for run
+.TH RUN 1 "2025-09-24" "v0.0" "Universal Build and Execution Helper"
+.SH NAME
+run \- Universal build, compile, execute and interpret helper script
+
+.SH SYNOPSIS
+.B run
+[\fIOPTIONS\fR] <\fIfile_or_directory\fR>
+
+.SH DESCRIPTION
+\fBRun\fR is a Bash script that provides a unified interface for compiling, executing, and interpreting source files across multiple programming languages. It automatically detects project types and build configurations, offering a consistent development workflow regardless of the language used.
+
+.SH OPTIONS
+
+.TP
+.B <file>
+Compile and execute (default behavior).
+
+.TP
+.B -c <file>
+Compile only.
+
+.TP
+.B -e <file>
+Execute only (already compiled).
+
+.TP
+.B -i <file>
+Interpret only (for script languages).
+
+.SH JAVA PROJECT OPTIONS
+
+.TP
+.B --java <dir>
+Compile and run Java project.
+
+.TP
+.B -c --java <dir>
+Compile Java project only.
+
+.TP
+.B -e --java <dir>
+Run compiled Java project.
+
+.TP
+.B -i --java <dir>
+Run classes directly (no JAR).
+

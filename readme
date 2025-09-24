@@ -1,108 +1,125 @@
-# 🚀 RUN - Universal Build and Execution Helper (nota, não necessárioamene esse vai ser o nome, mas vou deixar assim por enquanto porque é uma boa coisa para se basear... talvez)
+# 🚀 RUN - Universal Build and Execution Helper
 
-**run** is a Bash script that provides a unified interface for compiling, executing, and interpreting source files across multiple programming languages. It automatically detects project types and handles build configurations, making development workflow consistent regardless of the language used.
+*(temporary name — subject to change)*
 
-## 📋 Table of Contents
-- [Features](#-features)
-- [Installation](#-installation)
-- [Usage](#-usage)
-- [Supported Languages](#-supported-languages)
-- [Java Project Support](#-java-project-support)
-- [Examples](#-examples)
-- [Exit Status](#-exit-status)
-- [Requirements](#-requirements)
-- [Contributing](#-contributing)
-- [License](#-license)
+**Run** is a Bash script that provides a unified interface for compiling, executing, and interpreting source files across multiple programming languages. It automatically detects project types and build configurations, offering a consistent development workflow regardless of the language used.
+
+---
 
 ## ✨ Features
 
-- **Multi-language support**: Single command for 10+ programming languages
-- **Smart detection**: Automatically identifies project types and build systems
-- **Java expertise**: Full support for manual, Maven, and Gradle projects
-- **Simple interface**: Consistent commands across all languages
-- **Zero configuration**: Works out of the box for most projects
+* **Multi-language support**: Unified commands for **20+ languages**
+* **Smart detection**: Automatically identifies project types and build systems
+* **Advanced Java support**: Handles Maven, Gradle, and manual projects
+* **Simple interface**: Consistent commands across all languages
+* **Zero configuration**: Works out-of-the-box for most projects
+
+---
 
 ## 📥 Installation
 
-(ainda não vou fazer isso)
+*(Coming soon — instructions for global installation)*
 
+---
 
 ## 🚀 Usage
 
 ### Basic Syntax
+
 ```bash
 run [OPTIONS] <file_or_directory>
 ```
 
 ### General Options
-| Option | Description |
-|--------|-------------|
-| `run <file>` | Compile and execute (default behavior) |
-| `run -c <file>` | Compile only |
-| `run -e <file>` | Execute only (already compiled) |
-| `run -i <file>` | Interpret only (for script languages) |
+
+| Option          | Description                            |
+| --------------- | -------------------------------------- |
+| `run <file>`    | Compile and execute (default behavior) |
+| `run -c <file>` | Compile only                           |
+| `run -e <file>` | Execute only (already compiled)        |
+| `run -i <file>` | Interpret only (for script languages)  |
 
 ### Java Project Options
-| Option | Description |
-|--------|-------------|
-| `run --java <dir>` | Compile and run Java project |
-| `run -c --java <dir>` | Compile Java project only |
-| `run -e --java <dir>` | Run compiled Java project |
+
+| Option                | Description                   |
+| --------------------- | ----------------------------- |
+| `run --java <dir>`    | Compile and run Java project  |
+| `run -c --java <dir>` | Compile Java project only     |
+| `run -e --java <dir>` | Run compiled Java project     |
 | `run -i --java <dir>` | Run classes directly (no JAR) |
+
+---
 
 ## 🌐 Supported Languages
 
-| Language | Compiler/Interpreter | Project Detection |
-|----------|---------------------|-------------------|
-| **C** | gcc | Single file |
-| **C++** | g++ | Single file |
-| **C#** | dotnet | .csproj files |
-| **Haskell** | ghc, runhaskell | Single file |
-| **Java** | javac, java | Manual, Maven, Gradle |
-| **JavaScript** | node | Single file |
-| **TypeScript** | tsc, node | Single file |
-| **Python** | python3 | Single file |
-| **Rust** | rustc, cargo | Single file, Cargo.toml |
-| **Shell** | bash | Single file |
+| Language                 | Compiler/Interpreter | Project Detection           |
+| ------------------------ | -------------------- | --------------------------- |
+| **C**                    | gcc                  | Single file                 |
+| **C++**                  | g++                  | Single file                 |
+| **C#**                   | dotnet               | `.csproj`                   |
+| **F#**                   | dotnet               | `.fsproj`, `.fsx`           |
+| **Java**                 | javac/java           | Manual, Maven, Gradle       |
+| **Kotlin**               | kotlinc/java         | Single file, `.kt` / `.kts` |
+| **Groovy**               | groovyc/groovy       | Single file                 |
+| **Swift**                | swift/swiftc         | Single file                 |
+| **Go**                   | go                   | Single file                 |
+| **Rust**                 | rustc/cargo          | Single file, `Cargo.toml`   |
+| **Haskell**              | ghc/runhaskell       | Single file                 |
+| **TypeScript**           | tsc/node             | Single file                 |
+| **JavaScript**           | node                 | Single file                 |
+| **Python**               | python3              | Single file                 |
+| **Ruby**                 | ruby                 | Single file                 |
+| **Lua**                  | lua                  | Single file                 |
+| **PHP**                  | php                  | Single file                 |
+| **Perl**                 | perl                 | Single file                 |
+| **R**                    | Rscript              | Single file                 |
+| **Julia**                | julia                | Single file                 |
+| **Zig**                  | zig                  | Single file                 |
+| **Dart**                 | dart                 | Single file                 |
+| **Fortran**              | gfortran             | Single file                 |
+| **Cobol**                | cobc                 | Single file                 |
+| **Assembly (x86/Linux)** | nasm/gcc/ld          | Single file                 |
+| **Shell**                | bash                 | Single file                 |
 
-outras linguagens adicionadas, mas que estou sem paciência de formaar por enquanto:
-Ruby
-Lua
-PHP
-GO
-Assembly (Linux x86)
+---
 
 ## ☕ Java Project Support
 
 ### Project Types
-- **📁 Manual Projects**: Directories with `.java` files in `src/` structure
-- **🐘 Maven Projects**: Directories containing `pom.xml`
-- **🦁 Gradle Projects**: Directories containing `build.gradle` or `build.gradle.kts`
+
+* **📁 Manual Projects**: Directories with `.java` files organized in `src/`
+* **🐘 Maven Projects**: Detected via `pom.xml`
+* **🦁 Gradle Projects**: Detected via `build.gradle` or `build.gradle.kts`
 
 ### Automatic Features
-- 🔍 **Main class detection**: Automatically finds the entry point
-- 📦 **JAR creation**: Builds executable JAR with proper manifest
-- 🏗️ **Dependency handling**: Manages external libraries when needed
-- 📂 **Smart compilation**: Compiles all `.java` files into `bin/` directory
+
+* 🔍 **Main class detection** (entry point)
+* 📦 **Automatic JAR creation** with proper manifest
+* 🏗️ **Dependency management** (libraries in `lib/` or specified paths)
+* 📂 **Organized compilation** into `bin/` directory
+
+---
 
 ## 💡 Examples
 
 ### General Usage
+
 ```bash
-# C - Compile and run
+# C - compile and run
 run program.c
 
-# Rust - Compile only
+# Rust - compile only
 run -c main.rs
 
-# Python - Interpret only
+# Python - interpret
 run -i script.py
 
-# Execute compiled binary
+# Run precompiled binary
 run -e myapp
 ```
 
 ### Java Projects
+
 ```bash
 # Auto-detect and run Java project
 run --java .
@@ -113,37 +130,36 @@ run -c --java ./my-project
 # Run existing Gradle project
 run -e --java ./gradle-project
 
-# Interpret classes directly
-run -i --java ./src
+# Run classes directly without JAR
+run -i ./src
 ```
 
-## 📊 Exit Status
+---
 
-| Code | Description |
-|------|-------------|
-| `0` | Success |
-| `1` | General error (compilation failed, file not found) |
-| `2` | Usage error (invalid options or arguments) |
+## 📊 Exit Codes
+
+| Code | Meaning                                                  |
+| ---- | -------------------------------------------------------- |
+| `0`  | Success                                                  |
+| `1`  | General error (compilation failed, file not found, etc.) |
+| `2`  | Usage error (invalid options or arguments)               |
+
+---
 
 ## ⚙️ Requirements
 
 ### Core Dependencies
-- **Bash** 4.0+
-- Standard language toolchains for your projects
 
-### Language-Specific Requirements
-- **C/C++**: gcc/g++
-- **C#**: .NET SDK
-- **Java**: JDK 8+
-- **Rust**: rustc/cargo
-- **Python**: python3
-- **Haskell**: ghc
-- **Node.js**: node/npm
+* **Bash** 4.0+
+* Standard language toolchains installed
 
+### Examples of Language-Specific Requirements
 
+* **C/C++**: gcc/g++
+* **.NET**: SDK installed (C#, F#)
+* **Java**: JDK 8+
+* **Rust**: rustc/cargo
+* **Python**: python3
+* **Haskell**: ghc
+* **Node.js**: node/npm
 
-## 📄 License
-
-(ainda preciso fazer essa parte, lembrente para mim depois, mas vou querer algo estilo open source)
-
-Copyright © 2025 Eduardo Hoffmann do Carmo Silva.

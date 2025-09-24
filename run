@@ -63,10 +63,10 @@ compile(){
     local file_name="$3"
 
     case "$ext" in
-        "c") gcc "$file" -o "$file_name" ;;
-        "s" | "S") gcc "$file" -o "$file_name" ;;
-        "cpp") g++ "$file" -o "$file_name" ;;
-        "asm")
+        "c") gcc "$file" -o "$file_name" ;; # C
+        "s" | "S") gcc "$file" -o "$file_name" ;; # Assembly
+        "cpp") g++ "$file" -o "$file_name" ;; # C++
+        "asm") #Assembly
             arch=$(uname -m)
             case "$arch" in
                 x86_64) fmt="elf64" ;;
@@ -88,7 +88,7 @@ compile(){
                 fi
             fi
             ;;
-        "cs")
+        "cs") # C#
             if compgen -G "*.csproj" > /dev/null; then
                 dotnet build
             else
@@ -96,9 +96,18 @@ compile(){
                 return 1
             fi
             ;;
-        "csproj") dotnet build ;;
-        "hs") ghc "$file" -o "$file_name" ;;
-        "rs")
+        "csproj") dotnet build ;; # C#
+        "fs") # F#
+            if compgen -G "*.fsproj" > /dev/null; then
+                dotnet build
+            else
+                echo "Error: F# requires a .fsproj project file." >&2
+                return 1
+            fi
+            ;;
+        "fsproj") dotnet build ;; # F#
+        "hs") ghc "$file" -o "$file_name" ;; # Haskell
+        "rs") # Rust
             local cargo_toml=$(find_cargo_toml "$file")
             if [ -n "$cargo_toml" ]; then
                 (cd "$(dirname "$cargo_toml")" && cargo build)
@@ -106,15 +115,46 @@ compile(){
                 rustc "$file"
             fi
             ;;
-        "go")
+        "go") # Go
             if [ "$compile_flag" = true ]; then
                 go build -o "$file_name" "$file"
             fi
             ;;
-        "ts") [ "$compile_flag" = true ] && tsc "$file" ;;
-        "jar")
+        "ts") [ "$compile_flag" = true ] && tsc "$file" ;; # Typescript
+        "zig") # Zig
+            if [ "$compile_flag" = true ]; then
+                zig build-exe "$file" -o "$file_name"
+            fi
+            ;;
+        "dart") # Dart
+            if [ "$compile_flag" = true ]; then
+                dart compile exe "$file" -o "$file_name"
+            fi
+            ;;
+        "swift") # Swift
+            if [ "$compile_flag" = true ]; then
+                swiftc "$file" -o "$file_name"
+            fi
+            ;;
+        "kt") # Kotlin
+            if [ "$compile_flag" = true ]; then
+                kotlinc "$file" -include-runtime -d "$file_name.jar"
+            fi
+            ;;
+        "groovy") # Groovy
+            if [ "$compile_flag" = true ]; then
+                groovyc "$file" -d .
+            fi
+            ;;
+        "f" | "for" | "f90" | "f95" | "f03" | "f08") # Fortran
+            gfortran "$file" -o "$file_name"
+            ;;
+        "cob" | "cbl") # COBOL
+            cobc -x "$file" -o "$file_name"
+            ;;
+        "jar") # Java
             echo "JAR file detected. Nothing to compile." ;;
-        "java" | "class")
+        "java" | "class") # Java
             echo "Error: Java requires the --java flag. Use: run --java <root_dir>" >&2
             return 1
             ;;
@@ -133,8 +173,9 @@ execute(){
     local file_name="$3"
 
     case "$ext" in
-        "c" | "cpp" | "s" | "S" | "asm" | "hs") ./"$file_name" ;;
+        "c" | "cpp" | "s" | "S" | "asm" | "hs" | "f" | "for" | "f90" | "f95" | "f03" | "f08" | "cob" | "cbl") ./"$file_name" ;;
         "cs" | "csproj") dotnet run --no-build ;;
+        "fs" | "fsproj") dotnet run --no-build ;;
         "rs")
             local cargo_toml=$(find_cargo_toml "$file")
             if [ -n "$cargo_toml" ]; then
@@ -150,7 +191,42 @@ execute(){
                 go run "$file"
             fi
             ;;
-        "js" | "ts" | "py" | "rb" | "sh" | "lua" | "php") interpreter "$file" "$ext" ;;
+        "zig")
+            if [ "$compile_flag" = true ]; then
+                ./"$file_name"
+            else
+                zig run "$file"
+            fi
+            ;;
+        "dart")
+            if [ "$compile_flag" = true ]; then
+                ./"$file_name"
+            else
+                dart run "$file"
+            fi
+            ;;
+        "swift")
+            if [ "$compile_flag" = true ]; then
+                ./"$file_name"
+            else
+                swift "$file"
+            fi
+            ;;
+        "kt")
+            if [ "$compile_flag" = true ]; then
+                java -jar "$file_name.jar"
+            else
+                kotlinc -script "$file"
+            fi
+            ;;
+        "groovy")
+            if [ "$compile_flag" = true ]; then
+                java $(basename "$file" .groovy)
+            else
+                groovy "$file"
+            fi
+            ;;
+        "js" | "ts" | "py" | "rb" | "sh" | "lua" | "php" | "pl" | "R" | "r" | "jl" | "fsx") interpreter "$file" "$ext" ;;
         "jar") java -jar "$file" ;;
         "java" | "class")
             echo "Error: Java requires the --java flag. Use: run --java <root_dir>" >&2
@@ -173,14 +249,22 @@ interpreter(){
     local file="$1"
     local ext="$2"
     case "$ext" in
-        "hs") runhaskell "$file" ;;
-        "js" | "ts") node "$file" ;;
-        "py") python3 "$file" ;;
-        "rb") ruby "$file" ;;
-        "lua") lua "$file" ;;
-        "php") php "$file" ;;
-        "sh") ./"$file" ;;
-        "java" | "class" | "jar")
+        "hs") runhaskell "$file" ;; # Haskell
+        "js" | "ts") node "$file" ;; # Javascript and Typescript
+        "py") python3 "$file" ;; # Python
+        "rb") ruby "$file" ;; # Ruby
+        "lua") lua "$file" ;; # Lua
+        "php") php "$file" ;; # PHP
+        "pl") perl "$file" ;; # Perl
+        "R" | "r") Rscript "$file" ;; # R
+        "jl") julia "$file" ;; # Julia
+        "dart") dart run "$file" ;; # Dart
+        "swift") swift "$file" ;; # Swift
+        "kts") kotlinc -script "$file" ;; # Kotlin
+        "groovy") groovy "$file" ;;
+        "sh") ./"$file" ;; # Shell
+        "fsx") dotnet fsi "$file" ;; # F#
+        "java" | "class" | "jar") # Java
             echo "Error: Java requires the --java flag. Use: run --java <root_dir>" >&2
             exit 1
             ;;
@@ -212,7 +296,6 @@ compile_java(){
             local simple_name=$(basename "$entry_point")
             local jar_name="$root_dir/$simple_name.jar"
 
-            # Detecta dependências (em lib/ ou no diretório raiz)
             local deps=()
             if compgen -G "$root_dir/lib/*.jar" > /dev/null; then
                 for dep in "$root_dir/lib/"*.jar; do
@@ -224,7 +307,6 @@ compile_java(){
                 done
             fi
 
-            # Se não encontrou nada, pergunta para o usuário
             if [ ${#deps[@]} -eq 0 ]; then
                 read -p "Nenhuma biblioteca encontrada. Digite o caminho para procurar JARs (ou deixe vazio para ignorar): " lib_path
                 if [ -n "$lib_path" ] && compgen -G "$lib_path/*.jar" > /dev/null; then
@@ -236,7 +318,6 @@ compile_java(){
                 fi
             fi
 
-            # Monta manifest com Main-Class e dependências
             {
                 echo "Main-Class: $entry_point"
                 if [ ${#deps[@]} -gt 0 ]; then
