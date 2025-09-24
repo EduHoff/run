@@ -64,7 +64,30 @@ compile(){
 
     case "$ext" in
         "c") gcc "$file" -o "$file_name" ;;
+        "s" | "S") gcc "$file" -o "$file_name" ;;
         "cpp") g++ "$file" -o "$file_name" ;;
+        "asm")
+            arch=$(uname -m)
+            case "$arch" in
+                x86_64) fmt="elf64" ;;
+                i?86)   fmt="elf32" ;;
+                *)
+                    echo "Error: Unsupported architecture $arch for Assembly." >&2
+                    return 1
+                    ;;
+            esac
+
+    nasm -f "$fmt" "$file" -o "$file_name.o"
+    if grep -q "global[[:space:]]\+main" "$file"; then
+        gcc -no-pie "$file_name.o" -o "$file_name"
+    else
+        if [ "$fmt" = "elf64" ]; then
+            ld -no-pie "$file_name.o" -o "$file_name"
+        else
+            ld -m elf_i386 "$file_name.o" -o "$file_name"
+                fi
+            fi
+            ;;
         "cs")
             if compgen -G "*.csproj" > /dev/null; then
                 dotnet build
@@ -110,7 +133,7 @@ execute(){
     local file_name="$3"
 
     case "$ext" in
-        "c" | "cpp" | "hs") ./"$file_name" ;;
+        "c" | "cpp" | "s" | "S" | "asm" | "hs") ./"$file_name" ;;
         "cs" | "csproj") dotnet run --no-build ;;
         "rs")
             local cargo_toml=$(find_cargo_toml "$file")
