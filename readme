@@ -1,8 +1,8 @@
-# 🚀 RUN - Universal Build and Execution Helper
+RUN - A basic abstraction to facilitate Linux terminal coding
 
-(temporary name — subject to change)
 
-**Run** is a Bash script that provides a unified interface for compiling, executing, and interpreting source files across multiple programming languages. It automatically detects project types and build configurations, offering a consistent development workflow regardless of the language used.
+
+Run is a Bash script that acts as a basic abstraction layer for compiling, executing, and interpreting source files across multiple programming languages. It simplifies terminal workflows by unifying commands and automatically detecting common project structures, while acknowledging the trade-offs and limitations of abstraction.
 
 ---
 
