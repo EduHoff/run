@@ -1,6 +1,6 @@
 # 🚀 RUN - Universal Build and Execution Helper
 
-*(temporary name — subject to change)*
+(temporary name — subject to change)
 
 **Run** is a Bash script that provides a unified interface for compiling, executing, and interpreting source files across multiple programming languages. It automatically detects project types and build configurations, offering a consistent development workflow regardless of the language used.
 
@@ -8,11 +8,11 @@
 
 ## ✨ Features
 
-* **Multi-language support**: Unified commands for **20+ languages**
-* **Smart detection**: Automatically identifies project types and build systems
-* **Advanced Java support**: Handles Maven, Gradle, and manual projects
-* **Simple interface**: Consistent commands across all languages
-* **Zero configuration**: Works out-of-the-box for most projects
+**Multi-language support**: Unified commands for **20+ languages**
+**Smart detection**: Automatically identifies project types and build systems
+**Advanced Java support**: Handles Maven, Gradle, and manual projects
+**Simple interface**: Consistent commands across all languages
+**Zero configuration**: Works out-of-the-box for most projects
 
 ---
 
