@@ -42,7 +42,7 @@ run [OPTIONS] <file_or_java_directory>
 | `run -e <file>` | Execute only (already compiled)        |
 | `run -i <file>` | Interpret only (for script languages)  |
 | `--version`     | Show script version                    |
-| `--help`        | Show this help message                 |
+| `--help`        | Show a help message                    |
 
 ## Java Project Options
 
