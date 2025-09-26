@@ -1,14 +1,14 @@
 .\" Manpage for run
-.TH RUN 1 "2025-09-24" "v0.0" "Universal Build and Execution Helper"
+.TH RUN 1 "2025-09-26" "v0.1" "Basic abstraction to facilitate Linux terminal coding"
 .SH NAME
-run \- Universal build, compile, execute and interpret helper script
+run \- basic abstraction to compile, execute and interpret multiple programming languages
 
 .SH SYNOPSIS
 .B run
-[\fIOPTIONS\fR] <\fIfile_or_directory\fR>
+[\fIOPTIONS\fR] <\fIfile_or_java_directory\fR>
 
 .SH DESCRIPTION
-\fBRun\fR is a Bash script that provides a unified interface for compiling, executing, and interpreting source files across multiple programming languages. It automatically detects project types and build configurations, offering a consistent development workflow regardless of the language used.
+\fBRun\fR is a Bash script that acts as a basic abstraction layer for compiling, executing, and interpreting source files across multiple programming languages. It simplifies Linux terminal workflows by unifying commands and automatically detecting common project structures.
 
 .SH OPTIONS
 
@@ -45,4 +45,19 @@ Run compiled Java project.
 .TP
 .B -i --java <dir>
 Run classes directly (no JAR).
+
+.SH EXIT STATUS
+.TP
+.B 0
+Success.
+.TP
+.B 1
+General error (compilation failed, file not found, etc.).
+.TP
+.B 2
+Usage error (invalid options or arguments).
+
+.SH AUTHOR
+Eduardo Hoffmann do Carmo Silva <ehcs.business@gmail.com>
+
 

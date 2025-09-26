@@ -1,4 +1,4 @@
-RUN - A basic abstraction to facilitate Linux terminal coding
+# RUN - A basic abstraction to facilitate Linux terminal coding
 
 
 
@@ -6,31 +6,28 @@ Run is a Bash script that acts as a basic abstraction layer for compiling, execu
 
 ---
 
-## ✨ Features
+## Installation
 
-**Multi-language support**: Unified commands for **20+ languages**
-**Smart detection**: Automatically identifies project types and build systems
-**Advanced Java support**: Handles Maven, Gradle, and manual projects
-**Simple interface**: Consistent commands across all languages
-**Zero configuration**: Works out-of-the-box for most projects
-
----
-
-## 📥 Installation
-
-*(Coming soon — instructions for global installation)*
-
----
-
-## 🚀 Usage
-
-### Basic Syntax
-
-```bash
-run [OPTIONS] <file_or_directory>
+```
+git clone https://github.com/EduHoff/run.git
+cd run
+mkdir -p ~/.local/bin
+mkdir -p ~/.local/share/man/man1
+mv run ~/.local/bin/
+mv run.1 ~/.local/share/man/man1/
+cd ..
+rm -rf run/
 ```
 
-### General Options
+---
+
+## Basic Syntax
+
+```
+run [OPTIONS] <file_or_java_directory>
+```
+
+## General Options
 
 | Option          | Description                            |
 | --------------- | -------------------------------------- |
@@ -39,7 +36,7 @@ run [OPTIONS] <file_or_directory>
 | `run -e <file>` | Execute only (already compiled)        |
 | `run -i <file>` | Interpret only (for script languages)  |
 
-### Java Project Options
+## Java Project Options
 
 | Option                | Description                   |
 | --------------------- | ----------------------------- |
@@ -50,7 +47,7 @@ run [OPTIONS] <file_or_directory>
 
 ---
 
-## 🌐 Supported Languages
+## Supported Languages
 
 | Language                 | Compiler/Interpreter | Project Detection           |
 | ------------------------ | -------------------- | --------------------------- |
@@ -83,60 +80,7 @@ run [OPTIONS] <file_or_directory>
 
 ---
 
-## ☕ Java Project Support
-
-### Project Types
-
-* **📁 Manual Projects**: Directories with `.java` files organized in `src/`
-* **🐘 Maven Projects**: Detected via `pom.xml`
-* **🦁 Gradle Projects**: Detected via `build.gradle` or `build.gradle.kts`
-
-### Automatic Features
-
-* 🔍 **Main class detection** (entry point)
-* 📦 **Automatic JAR creation** with proper manifest
-* 🏗️ **Dependency management** (libraries in `lib/` or specified paths)
-* 📂 **Organized compilation** into `bin/` directory
-
----
-
-## 💡 Examples
-
-### General Usage
-
-```bash
-# C - compile and run
-run program.c
-
-# Rust - compile only
-run -c main.rs
-
-# Python - interpret
-run -i script.py
-
-# Run precompiled binary
-run -e myapp
-```
-
-### Java Projects
-
-```bash
-# Auto-detect and run Java project
-run --java .
-
-# Compile Maven project only
-run -c --java ./my-project
-
-# Run existing Gradle project
-run -e --java ./gradle-project
-
-# Run classes directly without JAR
-run -i ./src
-```
-
----
-
-## 📊 Exit Codes
+## Exit Codes
 
 | Code | Meaning                                                  |
 | ---- | -------------------------------------------------------- |
@@ -144,22 +88,5 @@ run -i ./src
 | `1`  | General error (compilation failed, file not found, etc.) |
 | `2`  | Usage error (invalid options or arguments)               |
 
----
 
-## ⚙️ Requirements
-
-### Core Dependencies
-
-* **Bash** 4.0+
-* Standard language toolchains installed
-
-### Examples of Language-Specific Requirements
-
-* **C/C++**: gcc/g++
-* **.NET**: SDK installed (C#, F#)
-* **Java**: JDK 8+
-* **Rust**: rustc/cargo
-* **Python**: python3
-* **Haskell**: ghc
-* **Node.js**: node/npm
 
