@@ -41,6 +41,8 @@ run [OPTIONS] <file_or_java_directory>
 | `run -c <file>` | Compile only                           |
 | `run -e <file>` | Execute only (already compiled)        |
 | `run -i <file>` | Interpret only (for script languages)  |
+| `--version`     | Show script version                    |
+| `--help`        | Show this help message                 |
 
 ## Java Project Options
 
@@ -83,6 +85,7 @@ run [OPTIONS] <file_or_java_directory>
 | **Cobol**                | cobc                 | Single file                 |
 | **Assembly (x86/Linux)** | nasm/gcc/ld          | Single file                 |
 | **Shell**                | bash                 | Single file                 |
+
 
 ---
 

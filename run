@@ -1,6 +1,34 @@
 #!/usr/bin/env bash
 
 # -------------------
+# Version & Help
+# -------------------
+print_version() {
+    echo "run version 1.0.0"
+}
+
+print_help() {
+    cat <<EOF
+Usage: run [OPTIONS] <file_or_java_directory>
+
+Basic Options:
+  -c <file>           Compile only
+  -e <file>           Execute only (already compiled)
+  -i <file>           Interpret only (for script languages)
+
+Java Project Options:
+  --java <dir>        Compile and run Java project
+  -c --java <dir>     Compile Java project only
+  -e --java <dir>     Run compiled Java project
+  -i --java <dir>     Run classes directly (no JAR)
+
+Other:
+  --version           Show script version
+  --help              Show this help message
+EOF
+}
+
+# -------------------
 # Utility functions
 # -------------------
 
@@ -397,6 +425,8 @@ java_root=""
 
 while [[ $# -gt 0 ]]; do
     case $1 in
+        --version) print_version; exit 0 ;;
+        --help) print_help; exit 0 ;;
         -c) compile_flag=true; shift ;;
         -e) execute_flag=true; shift ;;
         -i) interpreter_flag=true; shift ;;
